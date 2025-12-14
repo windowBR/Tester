@@ -1,0 +1,24 @@
+# 单行测试
+sh> echo "helloworld!"
+<<< helloworld!
+
+# 多行测试
+sh> echo "line 1"
+    echo "line 2"
+<<< line 1
+    line 2
+
+# 多行 py 测试
+py> print("line 3")
+    print("line 4")
+<<< line 3
+    line 4
+
+# DEBUG 测试
+py> print("DEBUG: 应当不纳入测试")
+    print("line 5")
+<<< line 5
+
+sh> echo "DEBUG: 同上"
+    echo "line 6"
+<<< line 6
