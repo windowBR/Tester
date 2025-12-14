@@ -52,26 +52,51 @@ def parse_in_file(path):
             # expect a '<<<' line next (skip blank lines)
             while i < len(lines) and not lines[i].strip():
                 i += 1
-            expected = ''
+            expected_lines = []
             if i < len(lines) and lines[i].lstrip().startswith('<<<'):
-                expected = lines[i].lstrip()[3:].lstrip().rstrip('\n')
+                first = lines[i].lstrip()[3:].lstrip().rstrip('\n')
+                if first:
+                    expected_lines.append(first)
                 i += 1
+                # collect following indented lines as continuation of expected
+                while i < len(lines) and (lines[i].startswith('    ') or lines[i].startswith('\t')):
+                    expected_lines.append(lines[i].lstrip().rstrip('\n'))
+                    i += 1
+            expected = '\n'.join(expected_lines)
 
             tests.append({'type': 'py', 'code': '\n'.join(code_lines), 'expected': expected})
             continue
 
         if stripped.startswith('sh>'):
-            cmd = stripped[len('sh>'):].lstrip()
-            i += 1
+            # collect command: may be on same line or in following indented lines
+            rest = stripped[len('sh>'):].lstrip()
+            cmd_lines = []
+            if rest:
+                cmd_lines.append(rest)
+                i += 1
+                while i < len(lines) and (lines[i].startswith('    ') or lines[i].startswith('\t')):
+                    cmd_lines.append(lines[i].lstrip().rstrip('\n'))
+                    i += 1
+            else:
+                i += 1
+                while i < len(lines) and (lines[i].startswith('    ') or lines[i].startswith('\t')):
+                    cmd_lines.append(lines[i].lstrip().rstrip('\n'))
+                    i += 1
+
             # skip blanks then read expected marker
             while i < len(lines) and not lines[i].strip():
                 i += 1
-            expected = ''
+            expected_lines = []
             if i < len(lines) and lines[i].lstrip().startswith('<<<'):
-                expected = lines[i].lstrip()[3:].lstrip().rstrip('\n')
+                first = lines[i].lstrip()[3:].lstrip().rstrip('\n')
+                if first:
+                    expected_lines.append(first)
                 i += 1
+                while i < len(lines) and (lines[i].startswith('    ') or lines[i].startswith('\t')):
+                    expected_lines.append(lines[i].lstrip().rstrip('\n'))
+                    i += 1
 
-            tests.append({'type': 'sh', 'cmd': cmd, 'expected': expected})
+            tests.append({'type': 'sh', 'cmd': '\n'.join(cmd_lines), 'expected': '\n'.join(expected_lines)})
             continue
 
         # unknown line, skip
